@@ -1,9 +1,13 @@
 import time 
+import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from urllib.parse import urljoin
 
 def crawl(url, driver, visited = set()):
+    if requests.get(url).status_code != 200:
+        print("Error: cannot fetch this url")
+        
     if url in visited:
         #return if url is already visited
         return

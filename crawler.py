@@ -4,8 +4,9 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from urllib.parse import urljoin
 import sqlite3
+import json
 
-def crawl(url, driver, connection, c, visited = set()):
+def crawl(url, driver, connection, c, depth, max_depth, visited = set()):
     if requests.get(url).status_code != 200:
         print("Error: cannot fetch this url")
         return
@@ -22,25 +23,33 @@ def crawl(url, driver, connection, c, visited = set()):
     #Find all links and crawl the connected pages
     images = soup.find_all('img')
     links = soup.find_all('a', href=True)
-    #Add to db (in order: outlinks, backlinks, images)
-    c.execute('''INSERT INTO webpages VALUES(?,?,?)''', (links, links, images))
-    connection.commit()
-    for img in images:
-        #get url of all images 
-        image_url = urljoin(url, img.get('src'))
+    #Get image and outlinks for inputting into the database
+    imagelinks = [urljoin(url, img.get('src')) for img in images]
+    outlinks = [urljoin(url, link['href']) for link in links if link['href'].startswith('/wiki/') and ':' not in link['href']]
+    
+    c.execute('''INSERT INTO webpages VALUES(?,?)''', (url, json.dumps(imagelinks)))
+    c.execute('''INSERT INTO outlinks VALUES(?,?)''', (url, json.dumps(outlinks)))
 
-    for link in links:
-        next_url = link['href']
-        #If next url is a wikipedia article and not a subarticle, crawl
-        if next_url.startswith('/wiki/') and ':' not in next_url:
-            crawl(urljoin(url, next_url), driver, connection, c, visited)
+    #We have to add to backlinks before crawling the next page
+    for next in outlinks:
+         c.execute('''INSERT INTO backlinks VALUES(?,?)''', (url, next))
+    connection.commit()
+    
+    if depth > max_depth:
+        for next in outlinks:
+            crawl(next, driver, connection, c, depth + 1, max_depth, visited)
+    else:
+        print("Max depth reached. Terminating crawl.")
+        return
 
 if __name__ == '__main__':
     url = 'https://en.wikipedia.org/wiki/Cat'
     webdrive = webdriver.Safari()
     connection = sqlite3.connect('searchengine.db')
     c = connection.cursor()
-    crawl(url, webdrive, connection, c)
+    depth = 0
+    max_depth = 3
+    crawl(url, webdrive, connection, c, depth, max_depth)
     connection.close()
     webdrive.quit()
 

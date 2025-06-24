@@ -23,11 +23,12 @@ def crawl(url, driver, connection, c, depth, max_depth, visited = set()):
     #Find all links and crawl the connected pages
     images = soup.find_all('img')
     links = soup.find_all('a', href=True)
-    #Get image and outlinks for inputting into the database
+    #Get page text, image and outlinks for inputting into the database
+    pagetext = soup.get_text()
     imagelinks = [urljoin(url, img.get('src')) for img in images]
     outlinks = [urljoin(url, link['href']) for link in links if link['href'].startswith('/wiki/') and ':' not in link['href']]
     
-    c.execute('''INSERT OR IGNORE INTO webpages VALUES(?,?)''', (url, json.dumps(imagelinks)))
+    c.execute('''INSERT OR IGNORE INTO webpages VALUES(?,?,?)''', (url, pagetext, json.dumps(imagelinks)))
     c.execute('''INSERT OR IGNORE INTO outlinks VALUES(?,?)''', (url, json.dumps(outlinks)))
 
     #We have to add to backlinks before crawling the next page

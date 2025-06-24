@@ -8,7 +8,7 @@ import sqlite3
 
 #Example implementation of the indexer algorithm with some arbitrary documents
 
-doc1 = "I really like cats, they are very cool."
+doc1 = "I really like cats they are very cool."
 doc2 = "Dogs and cats don't get along with each other."
 
 tokens1 = doc1.lower().split()

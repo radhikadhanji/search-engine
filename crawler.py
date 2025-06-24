@@ -1,13 +1,14 @@
 import time 
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
 from urllib.parse import urljoin
 import sqlite3
 import json
 
-def crawl(url, driver, connection, c, depth, max_depth, visited = set()):
-    if requests.get(url).status_code != 200:
+def crawl(url, connection, c, depth, max_depth, visited = set()):
+    #get response using requests
+    response = requests.get(url, timeout=10)
+    if response.status_code != 200:
         print("Error: cannot fetch this url")
         return
 
@@ -16,10 +17,9 @@ def crawl(url, driver, connection, c, depth, max_depth, visited = set()):
         return
     visited.add(url)
     print(f'Crawling on {url}')
-    #Use safari web driver to handle JS
-    driver.get(url)
-    time.sleep(2)
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    
+    time.sleep(0.5)
+    soup = BeautifulSoup(response.text, 'html.parser')
     #Find all links and crawl the connected pages
     images = soup.find_all('img')
     links = soup.find_all('a', href=True)
@@ -38,21 +38,19 @@ def crawl(url, driver, connection, c, depth, max_depth, visited = set()):
     
     if depth < max_depth:
         for next in outlinks:
-            crawl(next, driver, connection, c, depth + 1, max_depth, visited)
+            crawl(next, connection, c, depth + 1, max_depth, visited)
     else:
         return
 
 if __name__ == '__main__':
     url = 'https://en.wikipedia.org/wiki/Cat'
-    webdrive = webdriver.Safari()
     connection = sqlite3.connect('searchengine.db')
     c = connection.cursor()
     depth = 0
     max_depth = 3
-    crawl(url, webdrive, connection, c, depth, max_depth)
+    crawl(url, connection, c, depth, max_depth)
     print("Max depth on all links reached. Terminating crawl.")
     connection.close()
-    webdrive.quit()
 
 
 

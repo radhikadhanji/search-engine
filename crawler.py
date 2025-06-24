@@ -27,19 +27,18 @@ def crawl(url, driver, connection, c, depth, max_depth, visited = set()):
     imagelinks = [urljoin(url, img.get('src')) for img in images]
     outlinks = [urljoin(url, link['href']) for link in links if link['href'].startswith('/wiki/') and ':' not in link['href']]
     
-    c.execute('''INSERT INTO webpages VALUES(?,?)''', (url, json.dumps(imagelinks)))
-    c.execute('''INSERT INTO outlinks VALUES(?,?)''', (url, json.dumps(outlinks)))
+    c.execute('''INSERT OR IGNORE INTO webpages VALUES(?,?)''', (url, json.dumps(imagelinks)))
+    c.execute('''INSERT OR IGNORE INTO outlinks VALUES(?,?)''', (url, json.dumps(outlinks)))
 
     #We have to add to backlinks before crawling the next page
     for next in outlinks:
-         c.execute('''INSERT INTO backlinks VALUES(?,?)''', (url, next))
+         c.execute('''INSERT OR IGNORE INTO backlinks VALUES(?,?)''', (url, next))
     connection.commit()
     
-    if depth > max_depth:
+    if depth < max_depth:
         for next in outlinks:
             crawl(next, driver, connection, c, depth + 1, max_depth, visited)
     else:
-        print("Max depth reached. Terminating crawl.")
         return
 
 if __name__ == '__main__':
@@ -50,6 +49,7 @@ if __name__ == '__main__':
     depth = 0
     max_depth = 3
     crawl(url, webdrive, connection, c, depth, max_depth)
+    print("Max depth on all links reached. Terminating crawl.")
     connection.close()
     webdrive.quit()
 

@@ -5,7 +5,7 @@ I am currently creating a search engine with Python and intend to document the p
 I am also in the process of migrating the database handling to Supabase as the database after crawling is too large to sufficiently store on Github.
 
 Process:
-# 1) Crawler - mostly complete (need to migrate handling of database to Supabase)
-# 2) Indexer - partially complete, need to link mapped data to the webpages table
-# 3) Query Engine - not started
-# 4) Client - not started
+### 1) Crawler - mostly complete (need to migrate handling of database to Supabase)
+### 2) Indexer - partially complete, need to link mapped data to the webpages table
+### 3) Query Engine - not started
+### 4) Client - not started
